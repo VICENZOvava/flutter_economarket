@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/api_client.dart';
+import '../services/firebase_google_auth_service.dart';
 import '../style/colors.dart';
 import '../style/perfil_style.dart';
 import 'login_screen.dart';
@@ -160,6 +161,7 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
   }
 
   Future<void> _logout() async {
+    await FirebaseGoogleAuthService.signOut();
     await _api.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -373,13 +375,13 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Mercados cadastrados',
+          'Mercados disponíveis',
           style: PerfilStyle.sectionTitleStyle,
         ),
         const SizedBox(height: 14),
         if (_markets.isEmpty)
           const Text(
-            'Nenhum mercado ativo.',
+            'Nenhum mercado disponível no momento.',
             style: PerfilStyle.menuSubtitleStyle,
           )
         else

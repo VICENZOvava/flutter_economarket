@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_client.dart';
+import '../services/firebase_google_auth_service.dart';
 import '../style/colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/ecomarket_logo.dart';
 import '../widgets/green_button.dart';
+import 'forgot_password_page.dart';
 import 'main_navigation.dart';
 import 'register_page.dart';
 
@@ -38,6 +40,28 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await ApiClient.instance.login(email, password);
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (_) => false,
+      );
+    } catch (error) {
+      if (mounted) _showMessage(error.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final identity = await FirebaseGoogleAuthService.signIn();
+      if (identity == null) return;
+      await ApiClient.instance.loginWithFirebase(
+        idToken: identity.idToken,
+        name: identity.name,
+      );
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -104,9 +128,14 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () => _showMessage(
-                    'A recuperação de senha não está disponível nesta API.',
-                  ),
+                  onPressed: _isLoading
+                      ? null
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        ),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.only(top: 5),
                   ),
@@ -123,6 +152,31 @@ class _LoginScreenState extends State<LoginScreen> {
               GreenButton(
                 text: _isLoading ? 'Entrando...' : 'Entrar',
                 onPressed: _isLoading ? null : _login,
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _loginWithGoogle,
+                  icon: const Text(
+                    'G',
+                    style: TextStyle(
+                      color: Color(0xFF4285F4),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  label: const Text('Continuar com Google'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.text,
+                    side: const BorderSide(color: Color(0xFFDADCE0)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
               const SizedBox(height: 27),
               Center(

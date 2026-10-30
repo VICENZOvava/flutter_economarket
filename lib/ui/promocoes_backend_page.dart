@@ -152,7 +152,7 @@ class _PromocoesBackendPageState extends State<PromocoesBackendPage> {
     }
     if (offers.isEmpty) {
       return const _MessageState(
-        message: 'Nenhuma promoção ativa foi cadastrada no servidor.',
+        message: 'Nenhuma oferta cadastrada.',
       );
     }
     return ListView.separated(

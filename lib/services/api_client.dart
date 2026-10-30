@@ -52,7 +52,6 @@ class ApiClient {
       await _storeUser(currentUser!);
       return currentUser;
     } catch (_) {
-      await logout();
       return null;
     }
   }
@@ -63,6 +62,19 @@ class ApiClient {
       '/auth/login',
       body: {'email': email, 'senha': password},
     );
+    return _acceptAuthentication(json);
+  }
+
+  Future<UserProfile> loginWithFirebase({
+    required String idToken,
+    String? name,
+  }) async {
+    final body = <String, dynamic>{'idToken': idToken};
+    final normalizedName = name?.trim();
+    if (normalizedName != null && normalizedName.isNotEmpty) {
+      body['nome'] = normalizedName;
+    }
+    final json = await _requestMap('POST', '/auth/firebase', body: body);
     return _acceptAuthentication(json);
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../style/colors.dart';
 import '../style/home_style.dart';
+import 'produtos_backend_page.dart';
 
 class HomeBackendPage extends StatefulWidget {
   const HomeBackendPage({super.key});
@@ -87,6 +88,14 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
     }
   }
 
+  void _openCategory(String category) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProdutosBackendPage(initialCategory: category),
+      ),
+    );
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -166,7 +175,11 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
         const SizedBox(height: 16),
         TextField(
           readOnly: true,
-          onTap: () => _showMessage('Use a aba Produtos para pesquisar.'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const ProdutosBackendPage(),
+            ),
+          ),
           decoration: InputDecoration(
             hintText: 'Pesquisar produto...',
             prefixIcon: const Icon(
@@ -301,37 +314,40 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
             Color(0xFFEDE0F7),
             Color(0xFFFCE0EE),
           ];
-          return Column(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: HomeStyle.categoryIconDecoration(
-                  colors[index % colors.length],
-                ),
-                child: Icon(
-                  _categoryIcon(category.name),
-                  color: AppColors.textPrimary,
-                ),
+          return InkWell(
+            onTap: () => _openCategory(category.name),
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 70,
+              child: Column(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: HomeStyle.categoryIconDecoration(
+                      colors[index % colors.length],
+                    ),
+                    child: Icon(
+                      _categoryIcon(category.name),
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    category.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: HomeStyle.categoryLabelStyle,
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
-              SizedBox(
-                width: 70,
-                child: Text(
-                  category.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: HomeStyle.categoryLabelStyle,
-                ),
-              ),
-            ],
+            ),
           );
         },
       ),
     );
   }
-
   IconData _categoryIcon(String name) {
     final normalized = name.toLowerCase();
     if (normalized.contains('bebida')) return Icons.local_drink;
@@ -350,7 +366,7 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
         height: 80,
         child: Center(
           child: Text(
-            'As ofertas aparecem aqui quando cadastradas no backend.',
+            'Nenhuma oferta disponível no momento.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary),
           ),

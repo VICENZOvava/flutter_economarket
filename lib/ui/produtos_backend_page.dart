@@ -5,7 +5,9 @@ import '../style/colors.dart';
 import '../style/produtos_style.dart';
 
 class ProdutosBackendPage extends StatefulWidget {
-  const ProdutosBackendPage({super.key});
+  final String? initialCategory;
+
+  const ProdutosBackendPage({super.key, this.initialCategory});
 
   @override
   State<ProdutosBackendPage> createState() => _ProdutosBackendPageState();
@@ -23,6 +25,7 @@ class _ProdutosBackendPageState extends State<ProdutosBackendPage> {
   @override
   void initState() {
     super.initState();
+    _selectedCategory = widget.initialCategory ?? 'Todos';
     _loadProducts();
   }
 
@@ -112,7 +115,28 @@ class _ProdutosBackendPageState extends State<ProdutosBackendPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Produtos', style: ProdutosStyle.titleStyle),
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Voltar para a tela principal',
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Produtos',
+                          style: ProdutosStyle.titleStyle,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${products.length} ${products.length == 1 ? 'produto encontrado' : 'produtos encontrados'}',
@@ -212,7 +236,7 @@ class _ProdutosBackendPageState extends State<ProdutosBackendPage> {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.70,
       ),
       itemBuilder: (context, index) => _ProductCard(
         product: products[index],
