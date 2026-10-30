@@ -39,7 +39,7 @@ class EcoMarketLogo extends StatelessWidget {
             ),
             children: const [
               TextSpan(
-                text: 'Eco',
+                text: 'Econo',
                 style: TextStyle(color: AppColors.green),
               ),
               TextSpan(
