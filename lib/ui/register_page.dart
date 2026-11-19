@@ -1,3 +1,5 @@
+//monta o cadastro, valida os campos e envia os dados para a API
+
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../style/colors.dart';

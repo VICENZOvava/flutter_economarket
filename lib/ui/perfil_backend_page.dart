@@ -227,6 +227,8 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
                     _buildMarketsCard(),
                     const SizedBox(height: 16),
                     _buildMenuList(),
+                    const SizedBox(height: 24),
+                    _buildBrandFooter(),
                   ],
                 ),
               ),
@@ -458,6 +460,26 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
         ),
       ],
     ),
+  );
+
+  Widget _buildBrandFooter() => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Image.asset(
+          'assets/Ícone do app (1024 px)@1x.png',
+          width: 28,
+          height: 28,
+          fit: BoxFit.cover,
+        ),
+      ),
+      const SizedBox(width: 8),
+      const Text(
+        'EconoMarket  •  Versão 0.1.0+1',
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      ),
+    ],
   );
 
   Future<void> _showLists() async {
@@ -717,15 +739,6 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                             label: const Text('Remover'),
                           ),
                       ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'A foto fica salva neste dispositivo.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
                     ),
                     if (_photoError != null) ...[
                       const SizedBox(height: 6),

@@ -1,3 +1,5 @@
+//desenha os campos de texto. A tela fornece o controller e configura, por exemplo, se o campo é de senha
+
 import 'package:flutter/material.dart';
 import '../style/colors.dart';
 

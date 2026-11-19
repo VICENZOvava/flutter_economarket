@@ -1,3 +1,5 @@
+//verifica se há uma sessão salva. Se não houver, encaminha para o login
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../style/colors.dart';
@@ -21,12 +23,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _openApp() async {
-    final results = await Future.wait<Object?>([
-      ApiClient.instance.restoreSession(),
-      Future<void>.delayed(const Duration(milliseconds: 900)),
-    ]);
+    var signedIn = false;
+    try {
+      final results = await Future.wait<Object?>([
+        ApiClient.instance.restoreSession(),
+        Future<void>.delayed(const Duration(milliseconds: 900)),
+      ]).timeout(const Duration(seconds: 22));
+      signedIn = results.first is UserProfile;
+    } catch (_) {
+      // If session restoration fails or hangs, continue to the login screen.
+    }
     if (!mounted) return;
-    final signedIn = results.first is UserProfile;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -52,11 +59,10 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 const Spacer(flex: 4),
                 Container(
-                  width: 106,
-                  height: 106,
+                  width: 116,
+                  height: 116,
                   decoration: BoxDecoration(
-                    color: AppColors.greenLight,
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.green.withValues(alpha: .18),
@@ -65,10 +71,10 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.shopping_basket_outlined,
-                    color: Colors.white,
-                    size: 62,
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/Ícone do app (1024 px)@1x.png',
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(height: 26),

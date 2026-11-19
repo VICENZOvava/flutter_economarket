@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform, ValueNotifier;
+  show ValueNotifier;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,11 +30,7 @@ class ApiClient {
     if (_configuredBaseUrl.isNotEmpty) {
       return _configuredBaseUrl.replaceFirst(RegExp(r'/$'), '');
     }
-    if (kIsWeb) return 'http://localhost:3000/api';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api';
-    }
-    return 'http://localhost:3000/api';
+    return 'https://api-econo-market.vercel.app/api';
   }
 
   bool get isAuthenticated => _token != null && currentUser != null;
@@ -147,25 +143,104 @@ class ApiClient {
   }
 
   Future<Uint8List?> getProfilePhoto(UserProfile user) async {
-    final encoded = await _preferences.getString(
-      'economarket_profile_photo_${user.id}',
+    _ensurePhotoOwner(user);
+    final response = await _requestRaw(
+      'GET',
+      '/usuarios/me/foto',
+      authenticated: true,
     );
-    if (encoded == null || encoded.isEmpty) return null;
+    if (response.statusCode == 404) {
+      final localPhoto = await _readStoredProfilePhoto(user.id);
+      if (localPhoto == null) return null;
+      try {
+        await _uploadProfilePhoto(localPhoto);
+        await _removeStoredProfilePhoto(user.id);
+      } catch (_) {}
+      return localPhoto;
+    }
+    await _ensureSuccessfulResponse(response, authenticated: true);
+    return response.bodyBytes;
+  }
+
+  Future<void> saveProfilePhoto(UserProfile user, Uint8List? photo) async {
+    _ensurePhotoOwner(user);
+    if (photo == null) {
+      await _request('DELETE', '/usuarios/me/foto', authenticated: true);
+      await _removeStoredProfilePhoto(user.id);
+      return;
+    }
+    await _uploadProfilePhoto(photo);
+    await _removeStoredProfilePhoto(user.id);
+  }
+
+  void _ensurePhotoOwner(UserProfile user) {
+    if (currentUser?.id != user.id) {
+      throw const ApiException('Entre novamente para alterar a foto.');
+    }
+  }
+
+  String _profilePhotoStorageKey(int userId) =>
+      'economarket_profile_photo_$userId';
+
+  Future<Uint8List?> _readStoredProfilePhoto(int userId) async {
+    final key = _profilePhotoStorageKey(userId);
     try {
+      final encoded = await _preferences.getString(key);
+      if (encoded == null || encoded.isEmpty) return null;
       return base64Decode(encoded);
-    } on FormatException {
-      await _preferences.remove('economarket_profile_photo_${user.id}');
+    } catch (_) {
+      await _removeStoredProfilePhoto(userId);
       return null;
     }
   }
 
-  Future<void> saveProfilePhoto(UserProfile user, Uint8List? photo) async {
-    final key = 'economarket_profile_photo_${user.id}';
-    if (photo == null) {
-      await _preferences.remove(key);
-      return;
+  Future<void> _removeStoredProfilePhoto(int userId) async {
+    try {
+      await _preferences.remove(_profilePhotoStorageKey(userId));
+    } catch (_) {}
+  }
+
+  Future<void> _uploadProfilePhoto(Uint8List photo) async {
+    final response = await _requestRaw(
+      'PUT',
+      '/usuarios/me/foto',
+      body: photo,
+      contentType: _profilePhotoContentType(photo),
+      authenticated: true,
+    );
+    await _ensureSuccessfulResponse(response, authenticated: true);
+  }
+
+  String _profilePhotoContentType(Uint8List bytes) {
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xff &&
+        bytes[1] == 0xd8 &&
+        bytes[2] == 0xff) {
+      return 'image/jpeg';
     }
-    await _preferences.setString(key, base64Encode(photo));
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4e &&
+        bytes[3] == 0x47 &&
+        bytes[4] == 0x0d &&
+        bytes[5] == 0x0a &&
+        bytes[6] == 0x1a &&
+        bytes[7] == 0x0a) {
+      return 'image/png';
+    }
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return 'image/webp';
+    }
+    throw const ApiException('Use JPEG, PNG ou WebP para a foto de perfil.');
   }
 
   Future<List<Product>> getProducts() async {
@@ -346,6 +421,53 @@ class ApiClient {
       throw const ApiException('A API retornou um objeto inválido.');
     }
     return Map<String, dynamic>.from(value);
+  }
+
+  Future<http.Response> _requestRaw(
+    String method,
+    String path, {
+    Uint8List? body,
+    String? contentType,
+    bool authenticated = false,
+  }) async {
+    final headers = <String, String>{'Accept': 'application/json'};
+    if (contentType != null) headers['Content-Type'] = contentType;
+    if (authenticated) {
+      final token = _token;
+      if (token == null || token.isEmpty) {
+        throw const ApiException('Sua sessao expirou. Entre novamente.');
+      }
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final request = http.Request(method, Uri.parse('$baseUrl$path'))
+      ..headers.addAll(headers);
+    if (body != null) request.bodyBytes = body;
+    try {
+      final streamed = await _http
+          .send(request)
+          .timeout(const Duration(seconds: 20));
+      return await http.Response.fromStream(streamed);
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw const ApiException('Falha ao conectar com a API.');
+    }
+  }
+
+  Future<void> _ensureSuccessfulResponse(
+    http.Response response, {
+    bool authenticated = false,
+  }) async {
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    var message = 'Falha ao comunicar com a API.';
+    try {
+      final error = jsonDecode(response.body);
+      if (error is Map && error['error'] is String) {
+        message = error['error'] as String;
+      }
+    } catch (_) {}
+    if (response.statusCode == 401 && authenticated) await logout();
+    throw ApiException(message, statusCode: response.statusCode);
   }
 
   Future<dynamic> _request(

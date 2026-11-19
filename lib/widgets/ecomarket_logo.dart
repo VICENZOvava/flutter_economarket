@@ -1,3 +1,5 @@
+//desenha o logo reutilizável
+
 import 'package:flutter/material.dart';
 import '../style/colors.dart';
 
@@ -16,20 +18,18 @@ class EcoMarketLogo extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: iconSize,
-          height: iconSize,
-          decoration: BoxDecoration(
-            color: AppColors.green,
-            borderRadius: BorderRadius.circular(iconSize * .28),
+        if (iconSize > 0) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(iconSize * .24),
+            child: Image.asset(
+              'assets/Ícone do app (1024 px)@1x.png',
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.cover,
+            ),
           ),
-          child: Icon(
-            Icons.person_outline_rounded,
-            color: Colors.white,
-            size: iconSize * .58,
-          ),
-        ),
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
+        ],
         RichText(
           text: TextSpan(
             style: TextStyle(

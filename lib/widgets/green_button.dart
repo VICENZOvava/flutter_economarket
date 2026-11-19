@@ -1,3 +1,5 @@
+//desenha o botão e recebe o texto e a ação de cada tela
+
 import 'package:flutter/material.dart';
 import '../style/colors.dart';
 

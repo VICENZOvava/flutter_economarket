@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'home_backend_page.dart';
 import 'lista_backend_page.dart';
 import 'comparar_backend_page.dart';
-import 'promocoes_backend_page.dart';
 import 'perfil_backend_page.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -19,7 +18,6 @@ class _MainNavigationState extends State<MainNavigation> {
     HomeBackendPage(),
     ListaBackendPage(),
     CompararBackendPage(),
-    PromocoesBackendPage(),
     PerfilBackendPage(),
   ];
 
@@ -38,11 +36,6 @@ class _MainNavigationState extends State<MainNavigation> {
       icon: Icon(Icons.bar_chart_outlined),
       activeIcon: Icon(Icons.bar_chart),
       label: 'Comparar',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.local_offer_outlined),
-      activeIcon: Icon(Icons.local_offer),
-      label: 'Promoções',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.person_outline),
