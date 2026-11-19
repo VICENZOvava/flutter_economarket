@@ -1,11 +1,7 @@
-# EconoMarket Flutter
+# EconoMarket
 
-O aplicativo consome a API em `https://api-econo-market.vercel.app/api`. Para usar outra instância, configure o endereço com `--dart-define=API_BASE_URL=URL_DA_API`.
+Compare preços entre mercados, encontre boas ofertas e organize suas compras em um só app.
 
-No Flutter, use `flutter pub get` e depois `flutter run`. Para desenvolvimento local, configure a URL da API local:
+## Download
 
-```sh
-flutter run --dart-define=API_BASE_URL=http://localhost:3000/api
-```
-
-O usuário precisa se cadastrar ou entrar pela API. Listas e itens são associados ao token da sessão. Produtos, mercados e promoções exibem os registros existentes no banco conectado à API; telas sem dados mostram estados vazios.
+[Baixar o EconoMarket para Android](assets/app-release.apk)
