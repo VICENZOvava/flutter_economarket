@@ -1,11 +1,11 @@
 {
-    "name": "flutter_economarket",
-    "short_name": "flutter_economarket",
+    "name": "EconoMarket",
+    "short_name": "EconoMarket",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Compare preços entre mercados e organize suas compras.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

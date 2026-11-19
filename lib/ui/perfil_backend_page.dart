@@ -543,17 +543,23 @@ class _MenuRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    onTap: onTap,
-    leading: Container(
-      width: 40,
-      height: 40,
-      decoration: PerfilStyle.menuIconDecoration(background),
-      child: Icon(icon, color: AppColors.textPrimary, size: 20),
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: PerfilStyle.menuIconDecoration(background),
+        child: Icon(icon, color: AppColors.textPrimary, size: 20),
+      ),
+      title: Text(title, style: PerfilStyle.menuTitleStyle),
+      subtitle: Text(subtitle, style: PerfilStyle.menuSubtitleStyle),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: AppColors.textSecondary,
+      ),
     ),
-    title: Text(title, style: PerfilStyle.menuTitleStyle),
-    subtitle: Text(subtitle, style: PerfilStyle.menuSubtitleStyle),
-    trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
   );
 }
 
