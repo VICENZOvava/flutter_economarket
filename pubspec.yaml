@@ -21,12 +21,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: 0.14.1
 
 flutter:
   uses-material-design: true
   assets:
     - "assets/Ícone do app (1024 px)@1x.png"
     - "assets/ecomarket_splash_branding.png"
+    - "assets/icon/icon.png"
 
 flutter_native_splash:
   color: "#0E7A38"
@@ -40,3 +42,9 @@ flutter_native_splash:
     image: "assets/Ícone do app (1024 px)@1x.png"
     icon_background_color: "#0E7A38"
     branding: "assets/ecomarket_splash_branding.png"
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
