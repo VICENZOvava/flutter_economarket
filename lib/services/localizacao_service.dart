@@ -34,15 +34,20 @@ List<MercadoProximo> mercadosProximos(
 }) {
   final proximos = <MercadoProximo>[];
   for (final mercado in mercados) {
-    final coordenada = coordenadasMercados[mercado.id];
-    if (coordenada == null) continue;
-    final distanciaMetros = Geolocator.distanceBetween(
-      pos.latitude,
-      pos.longitude,
-      coordenada.lat,
-      coordenada.lng,
-    );
-    final distanciaKm = distanciaMetros / 1000;
+    final coordenadas = coordenadasMercados[mercado.id];
+    if (coordenadas == null || coordenadas.isEmpty) continue;
+    final distanciaKm = coordenadas
+        .map(
+          (coordenada) =>
+              Geolocator.distanceBetween(
+                pos.latitude,
+                pos.longitude,
+                coordenada.lat,
+                coordenada.lng,
+              ) /
+              1000,
+        )
+        .reduce((menor, distancia) => distancia < menor ? distancia : menor);
     if (distanciaKm <= raioKm) {
       proximos.add(
         MercadoProximo(mercado: mercado, distanciaKm: distanciaKm),
