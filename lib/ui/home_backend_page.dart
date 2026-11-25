@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../services/api_client.dart';
+import '../services/localizacao_service.dart';
 import '../style/colors.dart';
 import '../style/home_style.dart';
 import 'produtos_backend_page.dart';
@@ -19,6 +21,10 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
   List<Category> _categories = [];
   List<ProductOffer> _promotions = [];
   List<Product> _products = [];
+  List<Market> _markets = [];
+  Set<int> _nearbyMarketIds = {};
+  bool _showNearbyMarkets = false;
+  bool _loadingLocation = false;
   bool _loading = true;
   String? _error;
 
@@ -38,6 +44,7 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
         _api.getCategories(),
         _api.getProductOffers(),
         _api.getProducts(),
+        _api.getMarkets(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -46,6 +53,9 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
             .where((offer) => offer.isPromotionCurrent)
             .toList();
         _products = results[2] as List<Product>;
+        _markets = (results[3] as List<Market>)
+            .where((market) => market.active)
+            .toList();
         _loading = false;
       });
     } catch (error) {
@@ -61,6 +71,10 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
     final totals = <String, List<double>>{};
     for (final product in _products) {
       for (final offer in product.availableOffers) {
+        if (_showNearbyMarkets &&
+            !_nearbyMarketIds.contains(offer.marketId)) {
+          continue;
+        }
         final values = totals.putIfAbsent(offer.marketName, () => [0, 0]);
         values[0] += offer.price;
         values[1]++;
@@ -77,6 +91,58 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
         .toList()
       ..sort((a, b) => a.average.compareTo(b.average));
     return rankings;
+  }
+
+  Future<void> _toggleNearbyMarkets() async {
+    if (_showNearbyMarkets) {
+      setState(() => _showNearbyMarkets = false);
+      return;
+    }
+    setState(() => _loadingLocation = true);
+    try {
+      final position = await obterPosicao(
+        aoNegarPermanentemente: () async {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'A permissão de localização está bloqueada nas configurações.',
+              ),
+              action: SnackBarAction(
+                label: 'Configurações',
+                onPressed: () => Geolocator.openAppSettings(),
+              ),
+            ),
+          );
+        },
+      );
+      if (!mounted) return;
+      if (position == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não foi possível obter sua localização. Verifique o GPS e tente novamente.',
+            ),
+          ),
+        );
+        return;
+      }
+      final nearby = mercadosProximos(position, _markets);
+      setState(() {
+        _nearbyMarketIds = nearby.map((item) => item.mercado.id).toSet();
+        _showNearbyMarkets = true;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível consultar sua localização.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingLocation = false);
+    }
   }
 
   List<_ProductDeal> get _featuredProductDeals {
@@ -387,9 +453,16 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
   Widget _buildMarketRankingList(List<_MarketAverage> rankings) {
     final topMarkets = rankings.take(3).toList();
     if (topMarkets.isEmpty) {
-      return const Text(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
         'Ainda não há preços suficientes para comparar mercados.',
-        style: TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          _buildNearbyMarketsToggle(),
+        ],
       );
     }
     return Column(
@@ -450,9 +523,30 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
             ),
           ),
         ],
+        const SizedBox(height: 8),
+        _buildNearbyMarketsToggle(),
       ],
     );
   }
+
+  Widget _buildNearbyMarketsToggle() => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton.icon(
+      onPressed: _loadingLocation ? null : _toggleNearbyMarkets,
+      icon: _loadingLocation
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.location_on_outlined, size: 18),
+      label: Text(
+        _showNearbyMarkets
+            ? 'Visualizar todos os mercados disponíveis'
+            : 'Visualizar apenas mercados perto de mim',
+      ),
+    ),
+  );
 
   IconData _categoryIcon(String name) {
     final normalized = name.toLowerCase();

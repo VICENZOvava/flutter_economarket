@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/localizacao_mercados.dart';
 import '../services/api_client.dart';
@@ -79,6 +81,74 @@ class _MercadosProximosPageState extends State<MercadosProximosPage> {
 
   String _formatarDistancia(double distanciaKm) =>
       distanciaKm.toStringAsFixed(1).replaceAll('.', ',');
+
+  Coordenada? _coordenadaDestino(Market mercado) {
+    final coordenadas = coordenadasMercados[mercado.id];
+    if (coordenadas == null || coordenadas.isEmpty) return null;
+    final posicao = _posicao;
+    if (posicao == null || coordenadas.length == 1) return coordenadas.first;
+    return coordenadas.reduce((maisProxima, candidata) {
+      final distanciaMaisProxima = Geolocator.distanceBetween(
+        posicao.latitude,
+        posicao.longitude,
+        maisProxima.lat,
+        maisProxima.lng,
+      );
+      final distanciaCandidata = Geolocator.distanceBetween(
+        posicao.latitude,
+        posicao.longitude,
+        candidata.lat,
+        candidata.lng,
+      );
+      return distanciaCandidata < distanciaMaisProxima
+          ? candidata
+          : maisProxima;
+    });
+  }
+
+  Future<void> _abrirRota(Market mercado) async {
+    final destino = _coordenadaDestino(mercado);
+    if (destino == null) {
+      _mostrarMensagem('Não há coordenadas cadastradas para este mercado.');
+      return;
+    }
+    final latLng = '${destino.lat},${destino.lng}';
+    final Uri uri;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      uri = Uri.parse('https://maps.apple.com/?daddr=$latLng');
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      uri = Uri.parse('google.navigation:q=$latLng');
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$latLng',
+      );
+    }
+    try {
+      final opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && defaultTargetPlatform == TargetPlatform.android) {
+        final fallback = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=$latLng',
+        );
+        if (await launchUrl(fallback, mode: LaunchMode.externalApplication)) {
+          return;
+        }
+      }
+      if (!opened && mounted) {
+        _mostrarMensagem('Não foi possível abrir um aplicativo de mapas.');
+      }
+    } catch (_) {
+      if (mounted) _mostrarMensagem('Não foi possível abrir um aplicativo de mapas.');
+    }
+  }
+
+  void _mostrarMensagem(String mensagem) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mensagem)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,19 +261,29 @@ class _MercadosProximosPageState extends State<MercadosProximosPage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              mercado.name,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mercado.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                if (proximo != null)
+                  Text(
+                    'a ${_formatarDistancia(proximo.distanciaKm)} km',
+                    style: const TextStyle(
+                      color: AppColors.primaryGreen,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (proximo != null)
-            Text(
-              'a ${_formatarDistancia(proximo.distanciaKm)} km',
-              style: const TextStyle(
-                color: AppColors.primaryGreen,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          TextButton.icon(
+            onPressed: () => _abrirRota(mercado),
+            icon: const Icon(Icons.directions_outlined, size: 18),
+            label: const Text('Ver rota'),
+          ),
         ],
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../services/api_client.dart';
+import '../services/localizacao_service.dart';
 import '../style/colors.dart';
 import '../style/comparar_style.dart';
 
@@ -15,6 +17,9 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
   final _api = ApiClient.instance;
   List<Market> _markets = [];
   List<Product> _products = [];
+  Set<int> _nearbyMarketIds = {};
+  bool _showNearbyMarkets = false;
+  bool _loadingLocation = false;
   ShoppingList? _list;
   bool _loading = true;
   bool _refreshPending = false;
@@ -90,11 +95,66 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
     for (final product in _products) product.id: product,
   };
 
+  Future<void> _toggleNearbyMarkets() async {
+    if (_showNearbyMarkets) {
+      setState(() => _showNearbyMarkets = false);
+      return;
+    }
+    setState(() => _loadingLocation = true);
+    try {
+      final position = await obterPosicao(
+        aoNegarPermanentemente: () async {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'A permissão de localização está bloqueada nas configurações.',
+              ),
+              action: SnackBarAction(
+                label: 'Configurações',
+                onPressed: () => Geolocator.openAppSettings(),
+              ),
+            ),
+          );
+        },
+      );
+      if (!mounted) return;
+      if (position == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não foi possível obter sua localização. Verifique o GPS e tente novamente.',
+            ),
+          ),
+        );
+        return;
+      }
+      final nearby = mercadosProximos(position, _markets);
+      setState(() {
+        _nearbyMarketIds = nearby.map((item) => item.mercado.id).toSet();
+        _showNearbyMarkets = true;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível consultar sua localização.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingLocation = false);
+    }
+  }
+
   List<_MarketTotal> get _marketTotals {
     final list = _list;
     if (list == null || list.items.isEmpty) return const [];
     final productsById = _productsById;
-    return _markets.map((market) {
+    final markets = _showNearbyMarkets
+        ? _markets.where((market) => _nearbyMarketIds.contains(market.id))
+        : _markets;
+    return markets.map((market) {
       var total = 0.0;
       var coveredItems = 0;
       for (final item in list.items) {
@@ -179,8 +239,12 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
                     'Ainda não há preço para todos os itens em um mesmo mercado. '
                     'Os totais parciais aparecem abaixo.',
                   ),
+                if (best == null) _buildNearbyToggle(),
                 const SizedBox(height: 16),
-                _buildMarketTotals(totals, list.items.length),
+                if (_showNearbyMarkets && _nearbyMarketIds.isEmpty)
+                  _notice('Nenhum mercado cadastrado dentro de 15 km.')
+                else
+                  _buildMarketTotals(totals, list.items.length),
                 const SizedBox(height: 16),
                 _buildProductsCard(list),
               ],
@@ -250,7 +314,15 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
           ],
         ),
         const SizedBox(height: 4),
-        Text(best.name, style: CompararStyle.bestMarketNameStyle),
+        Row(
+          children: [
+            Expanded(
+              child: Text(best.name, style: CompararStyle.bestMarketNameStyle),
+            ),
+            const SizedBox(width: 8),
+            Flexible(child: _buildNearbyToggle(inBestMarketCard: true)),
+          ],
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -273,6 +345,32 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
         ),
       ],
     ),
+  );
+
+  Widget _buildNearbyToggle({bool inBestMarketCard = false}) => TextButton(
+    onPressed: _loadingLocation ? null : _toggleNearbyMarkets,
+    style: TextButton.styleFrom(
+      foregroundColor: inBestMarketCard
+          ? Colors.white
+          : AppColors.primaryGreen,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      minimumSize: Size.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    child: _loadingLocation
+        ? const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Text(
+            _showNearbyMarkets
+                ? 'Visualizar todos os mercados disponíveis'
+                : 'Visualizar apenas mercados perto de mim',
+            textAlign: TextAlign.end,
+            maxLines: 2,
+            style: const TextStyle(fontSize: 10),
+          ),
   );
 
   Widget _stat(String label, String value, Color valueColor) => Container(
@@ -379,7 +477,13 @@ class _CompararBackendPageState extends State<CompararBackendPage> {
             children: [
               _ProductComparisonRow(
                 item: item,
-                offers: product?.availableOffers ?? const [],
+                offers: (product?.availableOffers ?? const [])
+                    .where(
+                      (offer) =>
+                          !_showNearbyMarkets ||
+                          _nearbyMarketIds.contains(offer.marketId),
+                    )
+                    .toList(),
               ),
               if (index < list.items.length - 1)
                 const Divider(height: 1, indent: 16, endIndent: 16),

@@ -492,8 +492,13 @@ class _ProductPickerState extends State<_ProductPicker> {
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(product.name),
-                          subtitle: Text(
-                            '${product.category} · ${product.unit}',
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (product.brand?.trim().isNotEmpty == true)
+                                Text('Marca: ${product.brand!.trim()}'),
+                              Text('${product.category} · ${product.unit}'),
+                            ],
                           ),
                           trailing: const Icon(Icons.add_circle_outline),
                           onTap: () => Navigator.pop(context, product),
@@ -676,6 +681,11 @@ class _ListItemCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(item.productName, style: ListaStyle.itemNameStyle),
+              if (item.brand?.trim().isNotEmpty == true)
+                Text(
+                  'Marca: ${item.brand!.trim()}',
+                  style: ListaStyle.itemUnitStyle,
+                ),
               Text(item.unit, style: ListaStyle.itemUnitStyle),
             ],
           ),

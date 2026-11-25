@@ -236,7 +236,7 @@ class _ProdutosBackendPageState extends State<ProdutosBackendPage> {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.70,
+        childAspectRatio: 0.62,
       ),
       itemBuilder: (context, index) => _ProductCard(
         product: products[index],
@@ -302,6 +302,16 @@ class _ProductCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: ProdutosStyle.productNameStyle,
           ),
+          if (product.brand?.trim().isNotEmpty == true)
+            Text(
+              product.brand!.trim(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
           const SizedBox(height: 2),
           Text(product.category, style: ProdutosStyle.productCategoryStyle),
           const Spacer(),
