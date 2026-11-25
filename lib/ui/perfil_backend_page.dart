@@ -8,6 +8,7 @@ import '../services/firebase_google_auth_service.dart';
 import '../style/colors.dart';
 import '../style/perfil_style.dart';
 import 'login_screen.dart';
+import 'mercados_proximos_page.dart';
 
 class PerfilBackendPage extends StatefulWidget {
   const PerfilBackendPage({super.key});
@@ -21,6 +22,7 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
   final _imagePicker = ImagePicker();
   UserProfile? _user;
   List<ShoppingList> _lists = [];
+  List<Market> _allMarkets = [];
   List<Market> _markets = [];
   Uint8List? _profilePhoto;
   bool _loading = true;
@@ -72,9 +74,8 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
         _user = user;
         _profilePhoto = photo;
         _lists = results[1] as List<ShoppingList>;
-        _markets = (results[2] as List<Market>)
-            .where((market) => market.active)
-            .toList();
+        _allMarkets = results[2] as List<Market>;
+        _markets = _allMarkets.where((market) => market.active).toList();
         _loading = false;
       });
       _refreshIfPending();
@@ -449,6 +450,18 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
           title: 'Editar perfil',
           subtitle: 'Nome, e-mail e foto',
           onTap: _editProfile,
+        ),
+        const Divider(height: 1, indent: 16, endIndent: 16),
+        _MenuRow(
+          icon: Icons.location_on_outlined,
+          background: const Color(0xFFE8F5E9),
+          title: 'Visualizar localização',
+          subtitle: 'Localização e ${_allMarkets.length} mercados recebidos',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) => MercadosProximosPage(mercados: _allMarkets),
+            ),
+          ),
         ),
         const Divider(height: 1, indent: 16, endIndent: 16),
         _MenuRow(
