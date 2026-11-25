@@ -158,7 +158,22 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
   Future<void> _addPromotion(ProductOffer offer) async {
     try {
       await _api.addProductToActiveList(offer.productId);
-      if (mounted) _showMessage('${offer.productName} adicionado à lista.');
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Produto adicionado'),
+          content: Text(
+            '${offer.productName} foi adicionado à sua lista.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } catch (error) {
       if (mounted) _showMessage(error.toString());
     }

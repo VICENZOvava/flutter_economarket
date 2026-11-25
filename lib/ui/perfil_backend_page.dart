@@ -24,6 +24,7 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
   List<ShoppingList> _lists = [];
   List<Market> _allMarkets = [];
   List<Market> _markets = [];
+  bool _marketsExpanded = true;
   Uint8List? _profilePhoto;
   bool _loading = true;
   bool _refreshPending = false;
@@ -377,56 +378,84 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Mercados disponíveis',
-          style: PerfilStyle.sectionTitleStyle,
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Mercados disponíveis',
+                style: PerfilStyle.sectionTitleStyle,
+              ),
+            ),
+            IconButton(
+              tooltip: _marketsExpanded
+                  ? 'Ocultar mercados'
+                  : 'Mostrar mercados',
+              onPressed: () =>
+                  setState(() => _marketsExpanded = !_marketsExpanded),
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                _marketsExpanded
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 14),
-        if (_markets.isEmpty)
-          const Text(
-            'Nenhum mercado disponível no momento.',
-            style: PerfilStyle.menuSubtitleStyle,
-          )
-        else
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _markets.map((market) {
-              final initials = market.name
-                  .split(RegExp(r'\s+'))
-                  .where((part) => part.isNotEmpty)
-                  .take(2)
-                  .map((part) => part[0].toUpperCase())
-                  .join();
-              return Column(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: PerfilStyle.favoriteMarketBadgeDecoration(
-                      const Color(0xFF2E7D32),
+        if (_marketsExpanded) ...[
+          const SizedBox(height: 14),
+          if (_markets.isEmpty)
+            const Text(
+              'Nenhum mercado disponível no momento.',
+              style: PerfilStyle.menuSubtitleStyle,
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _markets.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 8,
+                mainAxisExtent: 86,
+              ),
+              itemBuilder: (context, index) {
+                final market = _markets[index];
+                final initials = market.name
+                    .split(RegExp(r'\s+'))
+                    .where((part) => part.isNotEmpty)
+                    .take(2)
+                    .map((part) => part[0].toUpperCase())
+                    .join();
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: PerfilStyle.favoriteMarketBadgeDecoration(
+                        const Color(0xFF2E7D32),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        initials,
+                        style: PerfilStyle.favoriteMarketInitialsStyle,
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initials,
-                      style: PerfilStyle.favoriteMarketInitialsStyle,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    width: 80,
-                    child: Text(
+                    const SizedBox(height: 6),
+                    Text(
                       market.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: PerfilStyle.favoriteMarketLabelStyle,
                     ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+                  ],
+                );
+              },
+            ),
+        ],
       ],
     ),
   );
