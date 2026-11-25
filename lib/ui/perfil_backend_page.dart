@@ -449,22 +449,22 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
                       decoration: PerfilStyle.favoriteMarketBadgeDecoration(
                         const Color(0xFF2E7D32),
                       ),
+                    clipBehavior: Clip.antiAlias,
                       alignment: Alignment.center,
                       child: logoAsset == null
                           ? Text(
                               initials,
                               style: PerfilStyle.favoriteMarketInitialsStyle,
                             )
-                          : Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Image.asset(
-                                logoAsset,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) => Text(
-                                  initials,
-                                  style:
-                                      PerfilStyle.favoriteMarketInitialsStyle,
-                                ),
+                          : Image.asset(
+                              logoAsset,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Text(
+                                initials,
+                                style:
+                                    PerfilStyle.favoriteMarketInitialsStyle,
                               ),
                             ),
                     ),
