@@ -545,7 +545,7 @@ class _HomeBackendPageState extends State<HomeBackendPage> {
   }
 
   Widget _buildNearbyMarketsToggle() => Align(
-    alignment: Alignment.centerLeft,
+    alignment: Alignment.center,
     child: TextButton.icon(
       onPressed: _loadingLocation ? null : _toggleNearbyMarkets,
       icon: _loadingLocation

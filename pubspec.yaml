@@ -31,6 +31,7 @@ flutter:
     - "assets/Ícone do app (1024 px)@1x.png"
     - "assets/ecomarket_splash_branding.png"
     - "assets/icon/icon.png"
+    - assets/icones-mercados/
 
 flutter_native_splash:
   color: "#0E7A38"

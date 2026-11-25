@@ -10,6 +10,17 @@ import '../style/perfil_style.dart';
 import 'login_screen.dart';
 import 'mercados_proximos_page.dart';
 
+const Map<int, String> _marketLogoAssets = {
+  8: 'assets/icones-mercados/spassosabores.png',
+  9: 'assets/icones-mercados/poupebem.png',
+  10: 'assets/icones-mercados/tenda.png',
+  11: 'assets/icones-mercados/daolio.png',
+  12: 'assets/icones-mercados/antonelli.png',
+  13: 'assets/icones-mercados/guarani.png',
+  14: 'assets/icones-mercados/santana.png',
+  15: 'assets/icones-mercados/unidos.png',
+};
+
 class PerfilBackendPage extends StatefulWidget {
   const PerfilBackendPage({super.key});
 
@@ -428,6 +439,7 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
                     .take(2)
                     .map((part) => part[0].toUpperCase())
                     .join();
+                final logoAsset = _marketLogoAssets[market.id];
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -438,10 +450,23 @@ class _PerfilBackendPageState extends State<PerfilBackendPage> {
                         const Color(0xFF2E7D32),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        initials,
-                        style: PerfilStyle.favoriteMarketInitialsStyle,
-                      ),
+                      child: logoAsset == null
+                          ? Text(
+                              initials,
+                              style: PerfilStyle.favoriteMarketInitialsStyle,
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Image.asset(
+                                logoAsset,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) => Text(
+                                  initials,
+                                  style:
+                                      PerfilStyle.favoriteMarketInitialsStyle,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 6),
                     Text(
